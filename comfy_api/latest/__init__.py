@@ -86,7 +86,23 @@ class ComfyAPI_latest(ComfyAPIBase):
             )
 
     class Caching(ProxiedSingleton):
-        """External cache provider API for sharing cached node outputs."""
+        """
+        External cache provider API for sharing cached node outputs
+        across ComfyUI instances.
+
+        Example::
+
+            from comfy_api.latest import Caching
+
+            class MyCacheProvider(Caching.CacheProvider):
+                async def on_lookup(self, context):
+                    ...  # check external storage
+
+                async def on_store(self, context, value):
+                    ...  # store to external storage
+
+            Caching.register_provider(MyCacheProvider())
+        """
         from ._caching import CacheProvider, CacheContext, CacheValue
 
         async def register_provider(self, provider: "ComfyAPI_latest.Caching.CacheProvider") -> None:
@@ -144,51 +160,7 @@ class Types:
     File3D = File3D
 
 
-class Caching:
-    """
-    External cache provider API for sharing cached node outputs
-    across ComfyUI instances.
-
-    Example::
-
-        from comfy_api.latest import Caching
-
-        class MyCacheProvider(Caching.CacheProvider):
-            async def on_lookup(self, context):
-                ...  # check external storage
-
-            async def on_store(self, context, value):
-                ...  # store to external storage
-
-        Caching.register_provider(MyCacheProvider())
-    """
-    # Public types — defined in comfy_api.latest._caching (source of truth)
-    from ._caching import CacheProvider, CacheContext, CacheValue
-
-    @staticmethod
-    def register_provider(provider: "Caching.CacheProvider") -> None:
-        """Register an external cache provider. Providers are called in registration order."""
-        from comfy_execution import cache_provider as _cp
-        with _cp._providers_lock:
-            if provider in _cp._providers:
-                _cp._logger.warning(f"Provider {provider.__class__.__name__} already registered")
-                return
-            _cp._providers.append(provider)
-            _cp._providers_snapshot = tuple(_cp._providers)
-            _cp._logger.debug(f"Registered cache provider: {provider.__class__.__name__}")
-
-    @staticmethod
-    def unregister_provider(provider: "Caching.CacheProvider") -> None:
-        """Unregister a previously registered cache provider."""
-        from comfy_execution import cache_provider as _cp
-        with _cp._providers_lock:
-            try:
-                _cp._providers.remove(provider)
-                _cp._providers_snapshot = tuple(_cp._providers)
-                _cp._logger.debug(f"Unregistered cache provider: {provider.__class__.__name__}")
-            except ValueError:
-                _cp._logger.warning(f"Provider {provider.__class__.__name__} was not registered")
-
+Caching = ComfyAPI_latest.Caching
 
 ComfyAPI = ComfyAPI_latest
 
