@@ -101,20 +101,12 @@ def apply_metadata_filter(
 
     def _exists_clause_for_value(key: str, value) -> sa.sql.ClauseElement:
         if value is None:
-            no_row_for_key = sa.not_(
+            return sa.not_(
                 sa.exists().where(
                     AssetReferenceMeta.asset_reference_id == AssetReference.id,
                     AssetReferenceMeta.key == key,
                 )
             )
-            null_row = _exists_for_pred(
-                key,
-                AssetReferenceMeta.val_json.is_(None),
-                AssetReferenceMeta.val_str.is_(None),
-                AssetReferenceMeta.val_num.is_(None),
-                AssetReferenceMeta.val_bool.is_(None),
-            )
-            return sa.or_(no_row_for_key, null_row)
 
         if isinstance(value, bool):
             return _exists_for_pred(key, AssetReferenceMeta.val_bool == bool(value))

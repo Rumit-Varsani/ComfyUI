@@ -46,15 +46,6 @@ def _check_is_scalar(v):
 
 def _scalar_to_row(key: str, ordinal: int, value) -> dict:
     """Convert a scalar value to a typed projection row."""
-    if value is None:
-        return {
-            "key": key,
-            "ordinal": ordinal,
-            "val_str": None,
-            "val_num": None,
-            "val_bool": None,
-            "val_json": None,
-        }
     if isinstance(value, bool):
         return {"key": key, "ordinal": ordinal, "val_bool": bool(value)}
     if isinstance(value, (int, float, Decimal)):
@@ -68,7 +59,7 @@ def _scalar_to_row(key: str, ordinal: int, value) -> dict:
 def convert_metadata_to_rows(key: str, value) -> list[dict]:
     """Turn a metadata key/value into typed projection rows."""
     if value is None:
-        return [_scalar_to_row(key, 0, None)]
+        return []
 
     if _check_is_scalar(value):
         return [_scalar_to_row(key, 0, value)]

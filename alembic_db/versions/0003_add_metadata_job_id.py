@@ -48,8 +48,28 @@ def upgrade() -> None:
             "ix_asset_references_preview_id", ["preview_id"]
         )
 
+    # Purge any all-null meta rows before adding the constraint
+    op.execute(
+        "DELETE FROM asset_reference_meta"
+        " WHERE val_str IS NULL AND val_num IS NULL AND val_bool IS NULL AND val_json IS NULL"
+    )
+    with op.batch_alter_table(
+        "asset_reference_meta", naming_convention=NAMING_CONVENTION
+    ) as batch_op:
+        batch_op.create_check_constraint(
+            "ck_asset_reference_meta_has_value",
+            "val_str IS NOT NULL OR val_num IS NOT NULL OR val_bool IS NOT NULL OR val_json IS NOT NULL",
+        )
+
 
 def downgrade() -> None:
+    with op.batch_alter_table(
+        "asset_reference_meta", naming_convention=NAMING_CONVENTION
+    ) as batch_op:
+        batch_op.drop_constraint(
+            "ck_asset_reference_meta_has_value", type_="check"
+        )
+
     with op.batch_alter_table(
         "asset_references", naming_convention=NAMING_CONVENTION
     ) as batch_op:
